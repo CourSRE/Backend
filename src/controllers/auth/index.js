@@ -1,6 +1,6 @@
 const express = require("express");
 const db = require('../../config/database/index')
-const response = require("../../config/database/index");
+const response = require("../../config/response/index");
 
 const authRouter = express.Router()
 authRouter.use(express.json());
