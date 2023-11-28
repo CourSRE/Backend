@@ -1,16 +1,22 @@
-const multer = require('multer')
-const path = require('path')
+const multer = require('multer');
+const path = require('path');
 
 const profileStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "public/")
-    },
-    filename: function (_req, file, callback) {
-        const fname =
-          file.fieldname + "-" + Date.now() + path.extname(file.originalname);
+  destination: function (_req, _file, cb) {
+    const uploadPath = path.join("public", "profile_images");
     
-        callback(null, fname);
-    },
-})
+    // Check if the folder exists, and create it if not
+    const fs = require('fs');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
 
-module.exports = profileStorage
+    cb(null, uploadPath);
+  },
+  filename: function (_req, file, callback) {
+    const fname = "profile-" + Date.now() + path.extname(file.originalname);
+    callback(null, fname);
+  },
+});
+
+module.exports = profileStorage;

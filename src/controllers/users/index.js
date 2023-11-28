@@ -100,12 +100,21 @@ usersRouter.put("/profile/:idUser", upload.single("profile_picture"), (req, res)
   const filename = req.file?.filename || "";
   const updated_at = new Date().toISOString();
 
-  const sql = `UPDATE users SET fullname = '${fullname}', profile_picture = '${filename}', role = '${role}', updated_at = '${updated_at}' WHERE user_id = '${user_id}'`;
-  const values = [fullname, filename, role, updated_at, user_id];
-  console.log(user_id)
+  let sql;
+  let values;
+
+  if (filename) {
+    // Update both fullname, role, and profile_picture
+    sql = `UPDATE users SET fullname = ?, profile_picture = ?, role = ?, updated_at = ? WHERE user_id = ?`;
+    values = [fullname, filename, role, updated_at, user_id];
+  } else {
+    // Update only fullname and role, leave profile_picture unchanged
+    sql = `UPDATE users SET fullname = ?, role = ?, updated_at = ? WHERE user_id = ?`;
+    values = [fullname, role, updated_at, user_id];
+  }
+  
   try {
     db.query(sql, values, (err, result) => {
-      console.log(result)
       if (err) {
         console.error(err);
         return res.status(500).json({ status: "error", message: "Invalid request" });
