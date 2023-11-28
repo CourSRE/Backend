@@ -21,4 +21,5 @@ completed_course_statusRouter.get('/', (req, res) => {
   }
 })
 
+
 module.exports = completed_course_statusRouter

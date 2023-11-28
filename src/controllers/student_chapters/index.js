@@ -6,7 +6,7 @@ const uuid = require('uuid');
 const student_chaptersRouter = express.Router();
 student_chaptersRouter.use(express.json());
 
-student_chaptersRouter.get('/', (req, res) => {
+student_chaptersRouter.get('/:idSt', (req, res) => {
   const sql = `SELECT * FROM student_chapters`
 
   try {

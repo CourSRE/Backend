@@ -12,20 +12,27 @@ usersRouter.use(express.json());
 usersRouter.use(express.json())
 
 usersRouter.get("/profile/:idUser", (req, res) => {
-  const sql = `SELECT * FROM users WHERE user_id = ${req.params?.idUser}`
+  const sql = `SELECT * FROM users WHERE user_id = "${req.params?.idUser}"`
 
   try {
-    db.query(sql, (err, fields) => {
-      const data = {}
-      response(200, fields, "SUCCESS", res)
-    })
+    db.query(sql, [encodedIdUser], (err, fields) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .json({ status: "error", message: "An error occurred" });
+      }
+
+      const data = {};
+      response(200, fields, "SUCCESS", res);
+    });
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return res
       .status(500)
-      .json({ status: "error", message: "An error occured" })
+      .json({ status: "error", message: "An error occurred" });
   }
-})
+});
 
 const upload = multer({ storage: profileStorage });
 usersRouter.post("/profile", upload.single("profile_picture"), (req, res) => {
@@ -88,37 +95,37 @@ usersRouter.post("/profile", upload.single("profile_picture"), (req, res) => {
 });
 
 usersRouter.put("/profile/:idUser", upload.single("profile_picture"), (req, res) => {
-  const user_id = req.params.idUser;
+  const user_id = req.params?.idUser;
   const { fullname, role } = req.body;
   const filename = req.file?.filename || "";
+  const updated_at = new Date().toISOString();
 
-  const sql = `UPDATE users SET fullname = ?, profile_picture = ?, role = ? WHERE user_id = ?`;
-  const values = [fullname, filename, role, user_id];
-
+  const sql = `UPDATE users SET fullname = '${fullname}', profile_picture = '${filename}', role = '${role}', updated_at = '${updated_at}' WHERE user_id = '${user_id}'`;
+  const values = [fullname, filename, role, updated_at, user_id];
+  console.log(user_id)
   try {
     db.query(sql, values, (err, result) => {
+      console.log(result)
       if (err) {
-        console.error(err) // Tambahkan ini untuk melihat detail kesalahan di konsol
-        return res
-          .status(500)
-          .json({ status: "error", message: "Invalid request" })
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
       }
       if (result.affectedRows > 0) {
         const data = {
           isSuccess: true,
           message: "Update Data Successfully",
         };
-        response(200, data, "Update Data Successfully", res)
+        return res.status(200).json(data);
       } else {
-        response(404, "User not found", "error", res)
+        return res.status(404).json({ status: "error", message: "User not found" });
       }
-    })
+    });
   } catch (error) {
-    // Perbaikan: Tangani kesalahan yang terjadi dalam blok catch.
-    console.error(error)
-    return res.status(500).json({ status: "error", message: "An error occurred" })
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
   }
-})
+});
+
 
 usersRouter.delete("/profile", (req, res) => {
   const { user_id } = req.body;

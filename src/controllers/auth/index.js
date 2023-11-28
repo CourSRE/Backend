@@ -8,7 +8,7 @@ const authRouter = express.Router()
 authRouter.use(express.json());
 
 authRouter.get('/:idAuth', (req, res) => {
-  const sql = `SELECT * FROM auth WHERE auth_id = ${req.params?.idAuth}`
+  const sql = `SELECT * FROM auth WHERE auth_id = "${req.params?.idAuth}"`
 
   try {
     db.query(sql, (err, fields) => {
