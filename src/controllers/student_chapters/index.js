@@ -58,4 +58,69 @@ student_chaptersRouter.post('/', (req, res) => {
   }
 });
 
+student_chaptersRouter.put('/:idSt', (req, res) => {
+  const { student_chapter_name, referral_code } = req.body;
+  const studentChapterId = req.params.idSt;
+
+  // Pastikan bahwa student_chapter_name dan referral_code tersedia
+  if (!student_chapter_name || !referral_code) {
+    return res.status(400).json({ status: "error", message: "Both student_chapter_name and referral_code are required" });
+  }
+
+  const updated_at = new Date().toISOString();
+
+  const sql = 'UPDATE student_chapters SET student_chapter_name=?, referral_code=?, updated_at=? WHERE student_chapter_id=?';
+  const values = [student_chapter_name, referral_code, updated_at, studentChapterId];
+
+  try {
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          student_chapter_id: studentChapterId,
+        };
+        response(200, data, "Data Updated Successfully", res);
+      } else {
+        return res.status(404).json({ status: "error", message: "Student Chapter not found" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
+  }
+});
+
+student_chaptersRouter.delete('/:idSt', (req, res) => {
+  const studentChapterId = req.params.idSt;
+
+  const sql = 'DELETE FROM student_chapters WHERE student_chapter_id=?';
+
+  try {
+    db.query(sql, [studentChapterId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          student_chapter_id: studentChapterId,
+        };
+        response(200, data, "Data Deleted Successfully", res);
+      } else {
+        return res.status(404).json({ status: "error", message: "Student Chapter not found" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
+  }
+});
+
 module.exports = student_chaptersRouter
