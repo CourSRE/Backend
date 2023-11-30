@@ -71,4 +71,88 @@ authRouter.post('/', async (req, res) => {
   }
 });
 
+authRouter.put('/:idAuth', async (req, res) => {
+  const { email, password } = req.body;
+  const authId = req.params.idAuth;
+
+  try {
+    if (!password) {
+      return res.status(400).json({ status: "error", message: "Password is required" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const updated_at = new Date().toISOString();
+
+    const sql = 'UPDATE auth SET email=?, password=?, updated_at=? WHERE auth_id=?';
+    const values = [email, hashedPassword, updated_at, authId];
+
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          auth_id: authId,
+        };
+        return res.status(200).json({
+          status: "success",
+          data,
+          message: "Data Updated Successfully",
+        });
+      } else {
+        return res.status(404).json({ status: "error", message: "Auth not found" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "An error occurred" });
+  }
+});
+
+authRouter.delete('/:idAuth', (req, res) => {
+  const authId = req.params.idAuth;
+
+  const sql = 'DELETE FROM auth WHERE auth_id=?';
+
+  try {
+    db.query(sql, [authId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          auth_id: authId,
+        };
+        return res.status(200).json({
+          status: "success",
+          data,
+          message: "Data Deleted Successfully",
+        });
+      } else {
+        return res.status(404).json({ status: "error", message: "Auth not found" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "An error occurred" });
+  }
+});
+
 module.exports = authRouter
