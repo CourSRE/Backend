@@ -43,7 +43,7 @@ coursesRouter.get('/:idCourse', (req, res) => {
 
 const upload = multer({ storage: coursesStorage });
 coursesRouter.post('/', upload.single('course_picture'), (req, res) => {
-  const { course_title, course_desc, estimate_finish_minutes, expertise } = req.body;
+  const { course_title, course_desc, long_desc, estimate_finish_minutes, expertise } = req.body;
   const imageFile = req.file;
   const imageFilename = imageFile ? imageFile.filename : null;
   const course_id = uuid.v4();
@@ -52,12 +52,12 @@ coursesRouter.post('/', upload.single('course_picture'), (req, res) => {
 
   const sql = `
     INSERT INTO courses 
-    (course_id, course_title, course_desc, estimate_finish_minutes, expertise, course_picture, created_at, updated_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (course_id, course_title, course_desc, long_desc, estimate_finish_minutes, expertise, course_picture, created_at, updated_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   try {
-    db.query(sql, [course_id, course_title, course_desc, estimate_finish_minutes, expertise, imageFilename, created_at, updated_at], (err, result) => {
+    db.query(sql, [course_id, course_title, course_desc, long_desc, estimate_finish_minutes, expertise, imageFilename, created_at, updated_at], (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ status: "error", message: "Invalid request" });
@@ -81,20 +81,20 @@ coursesRouter.post('/', upload.single('course_picture'), (req, res) => {
 
 coursesRouter.put('/:idCourse', upload.single('course_picture'), (req, res) => {
   const { idCourse } = req.params;
-  const { course_title, course_desc, estimate_finish_minutes, expertise } = req.body;
+  const { course_title, course_desc, long_desc, estimate_finish_minutes, expertise } = req.body;
   const imageFile = req.file;
   const imageFilename = imageFile ? imageFile.filename : null;
   const updated_at = new Date().toISOString();
 
   const sql = `
     UPDATE courses 
-    SET course_title=?, course_desc=?, estimate_finish_minutes=?, expertise=?, updated_at=?
+    SET course_title=?, course_desc=?, long_desc=?, estimate_finish_minutes=?, expertise=?, updated_at=?
     ${imageFilename ? ', course_picture=?' : ''}
     WHERE course_id=?
   `;
 
   try {
-    const params = [course_title, course_desc, estimate_finish_minutes, expertise, updated_at];
+    const params = [course_title, course_desc, long_desc, estimate_finish_minutes, expertise, updated_at];
     
     if (imageFilename) {
       params.push(imageFilename);
