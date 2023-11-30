@@ -56,6 +56,40 @@ completed_course_statusRouter.post('/', (req, res) => {
   }
 });
 
+completed_course_statusRouter.put('/:completedStatusId', (req, res) => {
+  const { user_id, course_id, status } = req.body;
+  const completedStatusId = req.params.completedStatusId;
+  const lastProgressAt = new Date().toISOString();
+
+  const sql = `
+    UPDATE completed_course_status 
+    SET user_id=?, course_id=?, status=?, last_progress_at=?
+    WHERE completed_status_id=?
+  `;
+
+  try {
+    db.query(sql, [user_id, course_id, status, lastProgressAt, completedStatusId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          completed_status_id: completedStatusId,
+        };
+        return res.status(200).json({ status: "success", data, message: "Data Updated Successfully" });
+      }
+
+      return res.status(404).json({ status: "error", message: "Data not found" });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
+  }
+});
+
 completed_course_statusRouter.delete('/:completedStatusId', (req, res) => {
   const { completedStatusId } = req.params;
   

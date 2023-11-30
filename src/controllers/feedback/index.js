@@ -56,6 +56,39 @@ feedbackRouter.post('/', (req, res) => {
   }
 });
 
+feedbackRouter.put('/:feedback_id', (req, res) => {
+  const { course_id, rating, feedback } = req.body;
+  const feedbackId = req.params.feedback_id;
+
+  const sql = `
+    UPDATE feedback 
+    SET course_id=?, rating=?, feedback=?
+    WHERE feedback_id=?
+  `;
+
+  try {
+    db.query(sql, [course_id, rating, feedback, feedbackId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          feedback_id: feedbackId,
+        };
+        return res.status(200).json({ status: "success", data, message: "Feedback Updated Successfully" });
+      }
+
+      return res.status(404).json({ status: "error", message: "Feedback not found" });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
+  }
+});
+
 feedbackRouter.delete('/:feedback_id', (req, res) => {
   const feedback_id = req.params.feedback_id;
 

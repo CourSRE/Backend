@@ -33,7 +33,6 @@ instructorRouter.post('/', (req, res) => {
     `;
 
     try {
-        // Eksekusi query dengan parameter
         db.query(sql, [instructor_id, course_id, rating, instructor_desc, title], (err, result) => {
             if (err) {
                 console.error(err);
@@ -54,6 +53,39 @@ instructorRouter.post('/', (req, res) => {
         console.error(error);
         return res.status(500).json({ status: "error", message: "An error occurred" });
     }
+});
+
+instructorRouter.put('/:instructorId', (req, res) => {
+  const { course_id, rating, instructor_desc, title } = req.body;
+  const instructorId = req.params.instructorId;
+
+  const sql = `
+    UPDATE instructor 
+    SET course_id=?, rating=?, instructor_desc=?, title=?
+    WHERE instructor_id=?
+  `;
+
+  try {
+    db.query(sql, [course_id, rating, instructor_desc, title, instructorId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          instructor_id: instructorId,
+        };
+        return res.status(200).json({ status: "success", data, message: "Instructor Updated Successfully" });
+      }
+
+      return res.status(404).json({ status: "error", message: "Instructor not found" });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
+  }
 });
 
 instructorRouter.delete('/:instructorId', (req, res) => {
