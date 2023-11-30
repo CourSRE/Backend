@@ -27,6 +27,7 @@ const modulesController = require("./controllers/modules/index");
 const quiz_answersController = require("./controllers/quiz_answer/index");
 const quiz_questionsController = require("./controllers/quiz_questions/index");
 const quizessController = require("./controllers/quizess/index");
+const sectionController = require("./controllers/section/index");
 const student_chaptersController = require("./controllers/student_chapters/index");
 const usersController = require("./controllers/users/index");
 
@@ -43,6 +44,7 @@ app.use("/api/modules", modulesController);
 app.use("/api/quiz_answers", quiz_answersController);
 app.use("/api/quiz_questions", quiz_questionsController);
 app.use("/api/quizess", quizessController);
+app.use("/api/section", sectionController);
 app.use("/api/student_chapters", student_chaptersController);
 app.use("/api/users", usersController);
 

@@ -26,7 +26,7 @@ modulesRouter.get('/', (req, res) => {
 
 const upload = multer({ storage: modulesStorage });
 modulesRouter.post('/', upload.fields([{ name: 'video' }, { name: 'pdf' }]), (req, res) => {
-  const { course_id, module_title, module_desc, is_optional, type } = req.body;
+  const { section_id, module_title, module_desc, is_optional, type } = req.body;
   const videoFiles = req.files['video'];
   const pdfFiles = req.files['pdf'];
   const videoFilenames = videoFiles ? videoFiles.map(file => file.filename) : [];
@@ -44,12 +44,12 @@ modulesRouter.post('/', upload.fields([{ name: 'video' }, { name: 'pdf' }]), (re
 
   const sql = `
     INSERT INTO modules 
-    (module_id, course_id, module_title, module_desc, is_optional, type, module_resource, created_at, updated_at) 
+    (module_id, section_id, module_title, module_desc, is_optional, type, module_resource, created_at, updated_at) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   try {
-    db.query(sql, [module_id, course_id, module_title, module_desc, is_optional, type, module_resource, created_at, updated_at], (err, result) => {
+    db.query(sql, [module_id, section_id, module_title, module_desc, is_optional, type, module_resource, created_at, updated_at], (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ status: "error", message: "Invalid request" });
