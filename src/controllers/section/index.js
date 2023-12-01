@@ -57,6 +57,40 @@ sectionRouter.post('/', (req, res) => {
     }
 });
 
+sectionRouter.put('/:sectionId', (req, res) => {
+    const { section_title, course_id, estimate_finish_minutes } = req.body;
+    const sectionId = req.params.sectionId;
+    const updated_at = new Date().toISOString();
+
+    const sql = `
+      UPDATE section 
+      SET section_title=?, course_id=?, estimate_finish_minutes=?, updated_at=?
+      WHERE section_id=?
+    `;
+
+    try {
+        db.query(sql, [section_title, course_id, estimate_finish_minutes, updated_at, sectionId], (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ status: "error", message: "Invalid request" });
+            }
+
+            if (result?.affectedRows) {
+                const data = {
+                    isSuccess: result.affectedRows,
+                    section_id: sectionId,
+                };
+                return res.status(200).json({ status: "success", data, message: "Section Updated Successfully" });
+            }
+
+            return res.status(404).json({ status: "error", message: "Section not found" });
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: "error", message: "An error occurred" });
+    }
+});
+
 sectionRouter.delete('/:sectionId', (req, res) => {
     const section_id = req.params?.sectionId;
 

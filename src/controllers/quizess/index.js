@@ -62,6 +62,40 @@ quizessRouter.post('/', (req, res) => {
   }
 });
 
+quizessRouter.put('/:quizId', (req, res) => {
+  const { module_id, quiz_title, quiz_desc, strict_level } = req.body;
+  const quizId = req.params.quizId;
+  const updated_at = new Date().toISOString();
+
+  const sql = `
+    UPDATE quizess 
+    SET module_id=?, quiz_title=?, quiz_desc=?, strict_level=?, updated_at=?
+    WHERE quiz_id=?
+  `;
+
+  try {
+    db.query(sql, [module_id, quiz_title, quiz_desc, strict_level, updated_at, quizId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
+      }
+
+      if (result?.affectedRows) {
+        const data = {
+          isSuccess: result.affectedRows,
+          quiz_id: quizId,
+        };
+        return res.status(200).json({ status: "success", data, message: "Quiz Updated Successfully" });
+      }
+
+      return res.status(404).json({ status: "error", message: "Quiz not found" });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
+  }
+});
+
 quizessRouter.delete('/:quizId', (req, res) => {
   const quizId = req.params.quizId;
 
