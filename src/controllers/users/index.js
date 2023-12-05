@@ -36,7 +36,7 @@ usersRouter.get("/profile/:idUser", (req, res) => {
 
 const upload = multer({ storage: profileStorage });
 usersRouter.post("/profile", upload.single("profile_picture"), (req, res) => {
-  const { fullname, role, auth_id, student_chapter_id } = req.body;
+  const { fullname, role, title, birthday, gender, auth_id, student_chapter_id } = req.body;
 
   if (!fullname || !role || !auth_id || !student_chapter_id) {
     return res
@@ -50,8 +50,8 @@ usersRouter.post("/profile", upload.single("profile_picture"), (req, res) => {
   const updated_at = new Date().toISOString();
 
   const sql = `
-    INSERT INTO users (user_id, fullname, profile_picture, role, auth_id, student_chapter_id, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (user_id, fullname, profile_picture, role, title, birthday, gender, auth_id, student_chapter_id, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
@@ -59,6 +59,9 @@ usersRouter.post("/profile", upload.single("profile_picture"), (req, res) => {
     fullname,
     filename,
     role,
+    title,
+    birthday,
+    gender,
     auth_id,
     student_chapter_id,
     created_at,
@@ -96,7 +99,7 @@ usersRouter.post("/profile", upload.single("profile_picture"), (req, res) => {
 
 usersRouter.put("/profile/:idUser", upload.single("profile_picture"), (req, res) => {
   const user_id = req.params?.idUser;
-  const { fullname, role } = req.body;
+  const { fullname, role, title, birthday, gender } = req.body;
   const filename = req.file?.filename || "";
   const updated_at = new Date().toISOString();
 
@@ -105,14 +108,14 @@ usersRouter.put("/profile/:idUser", upload.single("profile_picture"), (req, res)
 
   if (filename) {
     // Update both fullname, role, and profile_picture
-    sql = `UPDATE users SET fullname = ?, profile_picture = ?, role = ?, updated_at = ? WHERE user_id = ?`;
-    values = [fullname, filename, role, updated_at, user_id];
+    sql = `UPDATE users SET fullname = ?, profile_picture = ?, role = ?, title = ?, birthday = ?, gender = ?, updated_at = ? WHERE user_id = ?`;
+    values = [fullname, filename, role, title, birthday, gender, updated_at, user_id];
   } else {
     // Update only fullname and role, leave profile_picture unchanged
-    sql = `UPDATE users SET fullname = ?, role = ?, updated_at = ? WHERE user_id = ?`;
-    values = [fullname, role, updated_at, user_id];
+    sql = `UPDATE users SET fullname = ?, role = ?, title = ?, birthday = ?, gender = ?, updated_at = ? WHERE user_id = ?`;
+    values = [fullname, role, title, birthday, gender, updated_at, user_id];
   }
-  
+
   try {
     db.query(sql, values, (err, result) => {
       if (err) {

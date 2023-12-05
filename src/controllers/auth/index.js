@@ -1,29 +1,150 @@
 const express = require("express");
 const db = require('../../config/database/index');
 const response = require("../../config/response/index");
+const { verifyToken } = require("../../middleware/index");
+const secretKey = process.env.JWT_SECRET_KEY;
 const uuid = require('uuid');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const profileStorage = require("../../config/storage/profileStorage");
+const multer = require('multer');
+
+const studentChaptersTable = [];
+
+const fetchStudentChaptersFromDatabase = async () => {
+  try {
+    // Replace 'SELECT * FROM student_chapters' with your actual query
+    const query = 'SELECT * FROM student_chapters';
+
+    // Using the mysql package
+    db.query(query, (err, rows) => {
+      if (err) {
+        console.error('Error fetching student chapters from the database:', err);
+      } else {
+        // Populate studentChaptersTable with the fetched data
+        studentChaptersTable.push(...rows);
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching student chapters from the database:', error);
+  }
+};
+
+// Call the function to fetch and populate the studentChaptersTable
+fetchStudentChaptersFromDatabase();
 
 const authRouter = express.Router()
 authRouter.use(express.json());
 
-authRouter.get('/:idAuth', (req, res) => {
-  const sql = `SELECT * FROM auth WHERE auth_id = "${req.params?.idAuth}"`
-
+const upload = multer({ storage: profileStorage });
+authRouter.post('/register', upload.single('profile_picture'), async (req, res) => {
   try {
-    db.query(sql, (err, fields) => {
-      const data = {}
-      response(200, fields, "SUCCESS", res)
-    })
+    // Destructure request body
+    const {
+      fullname,
+      username,
+      email,
+      birthday,
+      gender,
+      password,
+      referral_code,
+    } = req.body;
+
+    // Check if referral code exists in student_chaptersTable
+    const studentChapter = studentChaptersTable.find(
+      (chapter) => chapter.referral_code === referral_code
+    );
+
+    if (!studentChapter) {
+      return res.status(400).json({ error: 'Invalid referral code' });
+    }
+
+    // Generate UUIDs for auth_id, and user_id,
+    const auth_id = uuid.v4();
+    const user_id = uuid.v4();
+
+    // Hash the password using bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Start a database transaction
+    db.beginTransaction(async (err) => {
+      if (err) {
+        console.error('Error starting transaction:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      try {
+        // Create auth entry
+        const authEntry = {
+          auth_id,
+          username,
+          email,
+          password: hashedPassword,
+          created_at: new Date(),
+          updated_at: new Date(),
+        };
+
+        // Insert auth entry into the database
+        db.query('INSERT INTO auth SET ?', authEntry, (err, result) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error('Error saving auth entry to the database:', err);
+              res.status(500).json({ error: 'Internal server error' });
+            });
+          }
+
+          console.log('Auth entry saved to the database:', result);
+
+          // Create user entry
+          const userEntry = {
+            user_id,
+            auth_id,
+            student_chapter_id: studentChapter.student_chapter_id,
+            fullname,
+            profile_picture: req.file.filename,
+            role: 'MEMBER',
+            birthday,
+            gender,
+            created_at: new Date(),
+            updated_at: new Date(),
+          };
+
+          // Insert user entry into the database
+          db.query('INSERT INTO users SET ?', userEntry, (err, result) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error('Error saving user entry to the database:', err);
+                res.status(500).json({ error: 'Internal server error' });
+              });
+            }
+
+            console.log('User entry saved to the database:', result);
+
+            // Commit the transaction if both queries were successful
+            db.commit((err) => {
+              if (err) {
+                return db.rollback(() => {
+                  console.error('Error committing transaction:', err);
+                  res.status(500).json({ error: 'Internal server error' });
+                });
+              }
+
+              res.status(201).json({ message: 'Registration successful' });
+            });
+          });
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
   } catch (error) {
-    console.error(error)
-    return res
-      .status(500)
-      .json({ status: "error", message: "An error occured" })
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-authRouter.post('/', async (req, res) => {
+authRouter.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -31,127 +152,48 @@ authRouter.post('/', async (req, res) => {
       return res.status(400).json({ status: "error", message: "Password is required" });
     }
 
-    // Generate salt using bcrypt
-    const salt = await bcrypt.genSalt(10);
+    // Check if the provided email is in the username or email column
+    const sql = 'SELECT * FROM auth WHERE BINARY username = ? OR email = ?';
+    const values = [email, email];
 
-    // Hash password using bcrypt with the generated salt
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const created_at = new Date().toISOString();
-    const updated_at = new Date().toISOString();
-
-    const sql = 'INSERT INTO auth (auth_id, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)';
-    const values = [uuid.v4(), email, hashedPassword, created_at, updated_at];
-
-    db.query(sql, values, (err, result) => {
+    db.query(sql, values, async (err, results) => {
       if (err) {
         console.error(err);
-        return res
-          .status(500)
-          .json({ status: "error", message: "Invalid request" });
+        return res.status(500).json({ status: "error", message: "Invalid request" });
       }
 
-      if (result?.affectedRows) {
-        const data = {
-          isSuccess: result.affectedRows,
-          auth_id: values[0], // assuming auth_id is the first value in the array
-        };
-        return res.status(200).json({
-          status: "success",
-          data,
-          message: "Data Added Successfully",
-        });
-      }
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "An error occurred" });
-  }
-});
+      if (results.length > 0) {
+        // There is a match for the provided email or username
+        const user = results[0];
+        const isValidPassword = await bcrypt.compare(password, user.password);
 
-authRouter.put('/:idAuth', async (req, res) => {
-  const { email, password } = req.body;
-  const authId = req.params.idAuth;
+        if (isValidPassword) {
+          // Password is valid, generate JWT token
+          const token = jwt.sign({ userId: user.auth_id }, secretKey, { expiresIn: '1h' });
 
-  try {
-    if (!password) {
-      return res.status(400).json({ status: "error", message: "Password is required" });
-    }
+          const data = {
+            isSuccess: true,
+            auth_id: user.auth_id,
+          };
 
-    const salt = await bcrypt.genSalt(10);
-
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const updated_at = new Date().toISOString();
-
-    const sql = 'UPDATE auth SET email=?, password=?, updated_at=? WHERE auth_id=?';
-    const values = [email, hashedPassword, updated_at, authId];
-
-    db.query(sql, values, (err, result) => {
-      if (err) {
-        console.error(err);
-        return res
-          .status(500)
-          .json({ status: "error", message: "Invalid request" });
-      }
-
-      if (result?.affectedRows) {
-        const data = {
-          isSuccess: result.affectedRows,
-          auth_id: authId,
-        };
-        return res.status(200).json({
-          status: "success",
-          data,
-          message: "Data Updated Successfully",
-        });
+          return res.status(200).json({
+            status: "success",
+            data,
+            token,
+            message: "Login successful",
+          });
+        } else {
+          // Password is invalid
+          return res.status(401).json({ status: "error", message: "Invalid password" });
+        }
       } else {
-        return res.status(404).json({ status: "error", message: "Auth not found" });
+        // No match found for the provided email or username
+        return res.status(404).json({ status: "error", message: "User not found" });
       }
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "An error occurred" });
-  }
-});
-
-authRouter.delete('/:idAuth', (req, res) => {
-  const authId = req.params.idAuth;
-
-  const sql = 'DELETE FROM auth WHERE auth_id=?';
-
-  try {
-    db.query(sql, [authId], (err, result) => {
-      if (err) {
-        console.error(err);
-        return res
-          .status(500)
-          .json({ status: "error", message: "Invalid request" });
-      }
-
-      if (result?.affectedRows) {
-        const data = {
-          isSuccess: result.affectedRows,
-          auth_id: authId,
-        };
-        return res.status(200).json({
-          status: "success",
-          data,
-          message: "Data Deleted Successfully",
-        });
-      } else {
-        return res.status(404).json({ status: "error", message: "Auth not found" });
-      }
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "An error occurred" });
+    return res.status(500).json({ status: "error", message: "An error occurred" });
   }
 });
 
