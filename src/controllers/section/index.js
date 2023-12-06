@@ -22,6 +22,72 @@ sectionRouter.get('/', (req, res) => {
     }
 });
 
+sectionRouter.get('/:sectionId', (req, res) => {
+    const query = `
+      SELECT
+        c.course_id,
+        c.course_title,
+        c.course_desc,
+        c.long_desc,
+        c.estimate_finish_minutes,
+        c.expertise,
+        c.course_picture,
+        s.section_id,
+        s.section_title,
+        m.module_id,
+        m.module_title,
+        m.module_desc,
+        m.is_optional,
+        m.type,
+        m.module_resource
+      FROM
+        courses c
+      LEFT JOIN
+        section s ON c.course_id = s.course_id
+      LEFT JOIN
+        modules m ON s.section_id = m.section_id
+      WHERE
+        s.section_id = ?;
+    `;
+
+    const sectionId = req.params.sectionId;
+
+    db.query(query, [sectionId], (err, result) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).send('Internal Server Error');
+        } else {
+            if (result.length === 0) {
+                res.status(404).send('Section not found');
+            } else {
+                const course = {
+                    course_id: result[0].course_id,
+                    course_title: result[0].course_title,
+                    course_desc: result[0].course_desc,
+                    long_desc: result[0].long_desc,
+                    estimate_finish_minutes: result[0].estimate_finish_minutes,
+                    expertise: result[0].expertise,
+                    course_picture: result[0].course_picture,
+                    sections: result.map((row) => ({
+                        section_id: row.section_id,
+                        section_title: row.section_title,
+                        modules: result.map((row) => ({
+                            module_id: row.module_id,
+                            module_title: row.module_title,
+                            module_desc: row.module_desc,
+                            is_optional: row.is_optional,
+                            type: row.type,
+                            module_resource: row.module_resource,
+                        })),
+                    })),
+                };
+
+                res.json(course);
+            }
+        }
+    });
+});
+
 sectionRouter.post('/', (req, res) => {
     const { section_title, course_id, estimate_finish_minutes } = req.body;
     const section_id = uuid.v4();

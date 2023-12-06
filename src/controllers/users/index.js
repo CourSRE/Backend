@@ -8,30 +8,53 @@ const uuid = require('uuid');
 const usersRouter = express.Router()
 usersRouter.use(express.json());
 
-
 usersRouter.use(express.json())
 
-usersRouter.get("/profile/:idUser", (req, res) => {
-  const sql = `SELECT * FROM users WHERE user_id = "${req.params?.idUser}"`
+usersRouter.get('/profile/:user_id', (req, res) => {
+  const userId = req.params.user_id;
 
-  try {
-    db.query(sql, [encodedIdUser], (err, fields) => {
-      if (err) {
-        console.error(err);
-        return res
-          .status(500)
-          .json({ status: "error", message: "An error occurred" });
+  const query = `
+    SELECT
+      u.fullname,
+      a.username,
+      u.student_chapter_id,
+      sc.student_chapter_name,
+      a.email,
+      u.profile_picture,
+      u.title
+    FROM
+      users u
+    JOIN
+      auth a ON u.auth_id = a.auth_id
+    JOIN
+      student_chapters sc ON u.student_chapter_id = sc.student_chapter_id
+    WHERE
+      u.user_id = ?;
+  `;
+
+  db.query(query, [userId], (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      if (result.length === 0) {
+        res.status(404).send('User not found');
+      } else {
+        const user_info = result[0];
+        
+        // Extract user_id separately
+        const { user_id, ...userInfoWithoutId } = user_info;
+
+        // Create the desired response structure
+        const response = {
+          userId,
+          user_info: userInfoWithoutId
+        };
+
+        res.json(response);
       }
-
-      const data = {};
-      response(200, fields, "SUCCESS", res);
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "An error occurred" });
-  }
+    }
+  });
 });
 
 const upload = multer({ storage: profileStorage });
