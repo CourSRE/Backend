@@ -15,6 +15,7 @@ usersRouter.get('/profile/:user_id', (req, res) => {
 
   const query = `
     SELECT
+      u.user_id,
       u.fullname,
       a.username,
       u.student_chapter_id,
@@ -40,15 +41,19 @@ usersRouter.get('/profile/:user_id', (req, res) => {
       if (result.length === 0) {
         res.status(404).send('User not found');
       } else {
+        // Extract user_info from the result
         const user_info = result[0];
-        
-        // Extract user_id separately
-        const { user_id, ...userInfoWithoutId } = user_info;
 
         // Create the desired response structure
         const response = {
-          userId,
-          user_info: userInfoWithoutId
+          user_id: user_info.user_id,
+          fullname: user_info.fullname,
+          username: user_info.username,
+          student_chapter_id: user_info.student_chapter_id,
+          student_chapter_name: user_info.student_chapter_name,
+          email: user_info.email,
+          profile_picture: user_info.profile_picture,
+          title: user_info.title
         };
 
         res.json(response);
