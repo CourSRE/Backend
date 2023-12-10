@@ -20,21 +20,21 @@ completed_course_statusRouter.get('/', (req, res) => {
       .status(500)
       .json({ status: "error", message: "An error occured" })
   }
-})
+});
 
 completed_course_statusRouter.post('/', (req, res) => {
-  const { user_id, course_id, module_id, status } = req.body;
+  const { user_id, module_id, status } = req.body;
   const completed_status_id = uuid.v4();
   const last_progress_at = new Date().toISOString();
 
   const sql = `
     INSERT INTO completed_course_status 
-    (completed_status_id, user_id, course_id, module_id, status, last_progress_at) 
+    (completed_status_id, user_id, module_id, status, last_progress_at) 
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
   try {
-    db.query(sql, [completed_status_id, user_id, course_id, module_id, status, last_progress_at], (err, result) => {
+    db.query(sql, [completed_status_id, user_id, module_id, status, last_progress_at], (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ status: "error", message: "Invalid request" });
@@ -57,18 +57,18 @@ completed_course_statusRouter.post('/', (req, res) => {
 });
 
 completed_course_statusRouter.put('/:completedStatusId', (req, res) => {
-  const { user_id, course_id, module_id, status } = req.body;
+  const { user_id, module_id, status } = req.body;
   const completedStatusId = req.params.completedStatusId;
   const lastProgressAt = new Date().toISOString();
 
   const sql = `
     UPDATE completed_course_status 
-    SET user_id=?, course_id=?, module_id=?, status=?, last_progress_at=?
+    SET user_id=?, module_id=?, status=?, last_progress_at=?
     WHERE completed_status_id=?
   `;
 
   try {
-    db.query(sql, [user_id, course_id, module_id, status, lastProgressAt, completedStatusId], (err, result) => {
+    db.query(sql, [user_id, module_id, status, lastProgressAt, completedStatusId], (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ status: "error", message: "Invalid request" });
