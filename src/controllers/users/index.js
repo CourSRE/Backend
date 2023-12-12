@@ -10,6 +10,105 @@ usersRouter.use(express.json());
 
 usersRouter.use(express.json())
 
+// // Fungsi untuk mendapatkan data dari tabel users dan quiz_score
+// async function fetchUserData() {
+//   try {
+//     // Adjust the query to use the correct column names
+//     const usersQuery = "SELECT user_id AS id, fullname AS fullName FROM users";
+//     const usersData = await db.query(usersQuery);
+
+//     console.log("usersData:", usersData); // Log the retrieved user data
+
+//     // Check if rows are undefined
+//     if (!usersData.rows) {
+//       console.error("No rows found in usersData");
+//       return []; // Return an empty array or handle it as needed
+//     }
+
+//     // Fetch quiz scores for each user
+//     const usersWithScores = await Promise.all(
+//       usersData.rows.map(async (user) => {
+//         const scoresQuery = "SELECT score FROM quiz_score WHERE user_id = $1";
+//         const scoresData = await db.query(scoresQuery, [user.id]);
+
+//         // Adding scores to the user object
+//         return { ...user, scores: scoresData.rows.map((row) => row.score) };
+//       })
+//     );
+
+//     return usersWithScores;
+//   } catch (error) {
+//     throw new Error(`Error fetching user data: ${error.message}`);
+//   }
+// }
+
+// // Fungsi untuk menghitung rank
+// function calculateRank(data) {
+//   // Sorting data berdasarkan averageScore dari yang tertinggi
+//   const sortedData = data.sort((a, b) => b.averageScore - a.averageScore);
+
+//   // Assigning rank based on sorted order
+//   sortedData.forEach((item, index) => {
+//     item.rank = index + 1;
+//   });
+
+//   return sortedData;
+// }
+
+// // Fungsi untuk menyusun data
+// async function prepareData() {
+//   try {
+//     // Mendapatkan data dari tabel users dan quiz_score
+//     const usersData = await fetchUserData();
+
+//     // Verifikasi bahwa data yang diperoleh tidak undefined atau null
+//     if (!usersData) {
+//       throw new Error("Failed to fetch data");
+//     }
+
+//     // Menggabungkan data
+//     const combinedData = usersData.map((user) => {
+//       // Verifikasi bahwa user.scores adalah array dan tidak undefined atau null
+//       const averageScore = Array.isArray(user.scores) ? calculateAverageScore(user.scores) : 0;
+
+//       return {
+//         rank: 0, // Rank akan dihitung setelahnya
+//         id: user.id,
+//         studentChapter: user.studentChapter, // Assuming studentChapter is already available
+//         percent: user.percent, // Assuming percent is already available
+//         averageScore: averageScore,
+//       };
+//     });
+
+//     // Menghitung rank
+//     const rankedData = calculateRank(combinedData);
+
+//     // Mengisi nilai rank ke dalam respon
+//     const responseData = rankedData.map((item, index) => ({
+//       rank: item.rank,
+//       id: item.id,
+//       studentChapter: item.studentChapter,
+//       percent: item.percent,
+//       averageScore: item.averageScore,
+//     }));
+
+//     return responseData;
+//   } catch (error) {
+//     throw new Error(`Error preparing data: ${error.message}`);
+//   }
+// }
+
+// // Endpoint GET untuk mendapatkan data pengguna sesuai format yang diinginkan
+// usersRouter.get("/", async (req, res) => {
+//   try {
+//     const data = await prepareData();
+//     res.json({ success: true, data: data, message: "Data users berhasil didapatkan" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// });
+
 usersRouter.get('/profile/:user_id', (req, res) => {
   const userId = req.params.user_id;
 

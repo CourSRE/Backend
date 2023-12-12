@@ -12,16 +12,14 @@ quiz_scoreRouter.get('/', (req, res) => {
 
   try {
     db.query(sql, (err, fields) => {
-      if (err) {
-        console.error(err);
-        return response.error(res, "Failed to retrieve quiz scores", err);
-      }
-
-      return response.success(res, "Quiz scores retrieved successfully", fields);
-    });
+      const data = {}
+      response(200, fields, "SUCCESS", res)
+    })
   } catch (error) {
-    console.error(error);
-    return response.error(res, "An error occurred", error);
+    console.error(error)
+    return res
+      .status(500)
+      .json({ status: "error", message: "An error occured" })
   }
 });
 
@@ -29,23 +27,26 @@ quiz_scoreRouter.get('/', (req, res) => {
 quiz_scoreRouter.get('/:quiz_score_id', (req, res) => {
   const { quiz_score_id } = req.params;
   const sql = `SELECT * FROM quiz_score WHERE quiz_score_id = ?`;
-
+  
   try {
-    db.query(sql, [quiz_score_id], (err, fields) => {
+    db.query(sql, [quiz_score_id], (err, result) => {
       if (err) {
         console.error(err);
-        return response.error(res, "Failed to retrieve quiz score", err);
+        return res.status(500).json({ status: "error", message: "Invalid request" });
       }
-
-      if (fields.length === 0) {
-        return response.notFound(res, "Quiz score not found");
+      if (result.affectedRows > 0) {
+        const data = {
+          isSuccess: true,
+          message: "Update Data Successfully",
+        };
+        return res.status(200).json(data);
+      } else {
+        return res.status(404).json({ status: "error", message: "User not found" });
       }
-
-      return response.success(res, "Quiz score retrieved successfully", fields[0]);
     });
   } catch (error) {
     console.error(error);
-    return response.error(res, "An error occurred", error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
   }
 });
 
@@ -72,14 +73,13 @@ quiz_scoreRouter.post('/', (req, res) => {
           isSuccess: result.affectedRows,
           quiz_score_id: quiz_score_id,
         };
-        return response.success(res, "Quiz score added successfully", data);
+        return res.status(200).json({ status: "success", data, message: "Data Added Successfully" });
       }
-
-      return response.error(res, "Failed to add quiz score");
+      return res.status(500).json({ status: "error", message: "Failed to add quiz score" });
     });
   } catch (error) {
     console.error(error);
-    return response.error(res, "An error occurred", error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
   }
 });
 
@@ -106,14 +106,13 @@ quiz_scoreRouter.put('/:quiz_score_id', (req, res) => {
           isSuccess: result.affectedRows,
           quiz_score_id: quiz_score_id,
         };
-        return response.success(res, "Quiz score updated successfully", data);
+        return res.status(200).json({ status: "success", data, message: "Data Updated Successfully" });
       }
-
-      return response.notFound(res, "Quiz score not found");
+      return res.status(404).json({ status: "error", message: "Quiz score not found" });
     });
   } catch (error) {
     console.error(error);
-    return response.error(res, "An error occurred", error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
   }
 });
 
@@ -138,14 +137,13 @@ quiz_scoreRouter.delete('/:quiz_score_id', (req, res) => {
           isSuccess: result.affectedRows,
           quiz_score_id: quiz_score_id,
         };
-        return response.success(res, "Quiz score deleted successfully", data);
+        return res.status(200).json({ status: "success", data, message: "Quiz Score Deleted Successfully" });
       }
-
-      return response.notFound(res, "Quiz score not found");
+      return res.status(404).json({ status: "error", message: "Quiz Score not found" });
     });
   } catch (error) {
     console.error(error);
-    return response.error(res, "An error occurred", error);
+    return res.status(500).json({ status: "error", message: "An error occurred" });
   }
 });
 

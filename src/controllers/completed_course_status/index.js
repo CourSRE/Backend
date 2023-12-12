@@ -30,7 +30,7 @@ completed_course_statusRouter.post('/', (req, res) => {
   const sql = `
     INSERT INTO completed_course_status 
     (completed_status_id, user_id, module_id, status, last_progress_at) 
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?)
   `;
 
   try {
